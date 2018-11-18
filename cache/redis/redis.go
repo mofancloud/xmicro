@@ -317,12 +317,12 @@ func (rc *Cache) IsExist(key string) bool {
 }
 
 func (rc *Cache) Incr(key string) error {
-	_, err := rc.do("INCR", key, 1)
+	_, err := redis.Bool(rc.do("INCRBY", key, 1))
 	return err
 }
 
 func (rc *Cache) Decr(key string) error {
-	_, err := rc.do("INCR", key, -1)
+	_, err := redis.Bool(rc.do("INCRBY", key, -1))
 	return err
 }
 
