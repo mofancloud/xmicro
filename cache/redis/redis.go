@@ -273,14 +273,11 @@ func (rc *Cache) LLen(key string, lmtcount int64) error {
 }
 
 // Get cache from redis.
-func (rc *Cache) Get(key string) (interface{}, error) {
-	/*
-		if v, err := rc.do("GET", key); err == nil {
-			return v
-		}
-		return nil
-	*/
-	return rc.do("GET", key)
+func (rc *Cache) Get(key string) interface{} {
+	if v, err := rc.do("GET", key); err == nil {
+		return v
+	}
+	return nil
 }
 
 // GetMulti get cache from redis.
