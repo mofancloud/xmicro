@@ -7,7 +7,7 @@ import (
 
 type Cache interface {
 	// get cached value by key.
-	Get(key string) (interface{}, error)
+	Get(key string) interface{}
 	// GetMulti is a batch version of Get.
 	GetMulti(keys []string) []interface{}
 	// set cached value with key and expire time.
