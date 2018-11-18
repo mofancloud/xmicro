@@ -1,12 +1,22 @@
 package pagination
 
-import "testing"
+import (
+	"bytes"
+	"fmt"
+	"net/http"
+	"testing"
+)
 
 func TestPageQuery(t *testing.T) {
-	pageQuery, err := ParsePageQuery(req)
+	req, err := http.NewRequest("POST", "/users/page", bytes.NewBufferString(`{"pageNo":1, "pageSize":100, "filters":{}}`))
 	if err != nil {
-		t.Error("ParsePageQuery err")
+		t.Error("NewRequest err")
 	}
 
-	t.Logf("pageQuery: %v", pageQuery)
+	pageQuery, err := ParsePageQueryFromRequest(req)
+	if err != nil {
+		t.Error("ParsePageQueryFromRequest err")
+	}
+
+	fmt.Printf("pageQuery: %v", pageQuery)
 }
