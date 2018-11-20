@@ -1,11 +1,17 @@
 package mongodb
 
+import (
+	"log"
+	"strings"
+	"time"
 
-type DataSource{
-	Config Config
-	Session  *mgo.Session
+	"gopkg.in/mgo.v2"
+)
+
+type DataSource struct {
+	Config  Config
+	Session *mgo.Session
 }
-
 
 // Constructor
 func NewDataSource(config *Config) *DataSource {
