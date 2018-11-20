@@ -17,30 +17,43 @@ type Config struct {
 	Mode           int    `json:"mode"`
 }
 
-type MongoRepository struct {
+type MongoRepository interface {
+	All(m Model, result interface{}) error
+	Count(m Model) (count int64, err error)
+	Update(m Model) (updated int, err error)
+	UpdateSelective(m Model, updateData map[string]interface{}) error
+	Insert(m Model) error
+	Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error)
+	FindOne(m Model) error
+	Delete(m Model) error
+	Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error)
+	Execute(m Model, fn DBFunc) error
+	EnsureIndexes(m Indexed)
+}
+
+type mongoRepositoryImpl struct {
 	dataSource *DataSource
 }
 
 // Constructor
-func NewMongoRepository(dataSource *DataSource) *MongoRepository {
-	self := &MongoRepository{
+func NewMongoRepository(dataSource *DataSource) MongoRepository {
+	return &mongoRepositoryImpl{
 		dataSource: dataSource,
 	}
-	return self
 }
 
-func (self *MongoRepository) GetDataSource() *DataSource {
+func (self *mongoRepositoryImpl) GetDataSource() *DataSource {
 	return self.dataSource
 }
 
-func (self *MongoRepository) All(m Model, result interface{}) error {
+func (self *mongoRepositoryImpl) All(m Model, result interface{}) error {
 	err := self.Execute(m, func(c *mgo.Collection) error {
 		return Where(c, nil).All(result)
 	})
 	return err
 }
 
-func (self *MongoRepository) Count(m Model) (count int64, err error) {
+func (self *mongoRepositoryImpl) Count(m Model) (count int64, err error) {
 	self.Execute(m, func(c *mgo.Collection) error {
 		c1, err := Where(c, nil).Count()
 		count = int64(c1)
@@ -49,7 +62,7 @@ func (self *MongoRepository) Count(m Model) (count int64, err error) {
 	return
 }
 
-func (self *MongoRepository) Update(m Model) (updated int, err error) {
+func (self *mongoRepositoryImpl) Update(m Model) (updated int, err error) {
 	self.Execute(m, func(c *mgo.Collection) error {
 		info, err := c.Find(m.Unique()).Apply(mgo.Change{
 			ReturnNew: true,
@@ -69,21 +82,21 @@ func (self *MongoRepository) Update(m Model) (updated int, err error) {
 	return
 }
 
-func (self *MongoRepository) UpdateSelective(m Model, updateData map[string]interface{}) error {
+func (self *mongoRepositoryImpl) UpdateSelective(m Model, updateData map[string]interface{}) error {
 	err := self.Execute(m, func(c *mgo.Collection) error {
 		return c.Update(m, bson.M{"$set": updateData})
 	})
 	return err
 }
 
-func (self *MongoRepository) Insert(m Model) error {
+func (self *mongoRepositoryImpl) Insert(m Model) error {
 	err := self.Execute(m, func(c *mgo.Collection) error {
 		return c.Insert(m)
 	})
 	return err
 }
 
-func (self *MongoRepository) Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error) {
+func (self *mongoRepositoryImpl) Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error) {
 	self.Execute(m, func(c *mgo.Collection) error {
 		changeInfo, err = c.Upsert(m.Unique(), bson.M{"$set": m})
 		return err
@@ -92,20 +105,20 @@ func (self *MongoRepository) Upsert(m Model) (changeInfo *mgo.ChangeInfo, err er
 	return
 }
 
-func (self *MongoRepository) FindOne(m Model) error {
+func (self *mongoRepositoryImpl) FindOne(m Model) error {
 	return self.Execute(m, func(c *mgo.Collection) error {
 		err := c.Find(m.Unique()).One(m)
 		return err
 	})
 }
 
-func (self *MongoRepository) Delete(m Model) error {
+func (self *mongoRepositoryImpl) Delete(m Model) error {
 	return self.Execute(m, func(c *mgo.Collection) error {
 		return c.Remove(m.Unique())
 	})
 }
 
-func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error) {
+func (self *mongoRepositoryImpl) Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error) {
 	filters, pageNo, pageSize, _ := ParsePageQuery(m, pageQuery)
 
 	self.Execute(m, func(c *mgo.Collection) error {
@@ -121,11 +134,11 @@ func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list inter
 	return
 }
 
-func (self *MongoRepository) Execute(m Model, fn DBFunc) error {
+func (self *mongoRepositoryImpl) Execute(m Model, fn DBFunc) error {
 	return Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), fn)
 }
 
-func (self *MongoRepository) EnsureIndexes(m Indexed) {
+func (self *mongoRepositoryImpl) EnsureIndexes(m Indexed) {
 	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
 		for _, i := range m.Indexes() {
 			c.EnsureIndex(i)
