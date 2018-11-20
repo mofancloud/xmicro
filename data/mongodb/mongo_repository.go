@@ -22,7 +22,7 @@ type MongoRepository struct {
 }
 
 // Constructor
-func NewRepository(dataSource *DataSource) *MongoRepository {
+func NewMongoRepository(dataSource *DataSource) *MongoRepository {
 	self := &MongoRepository{
 		dataSource: dataSource,
 	}
