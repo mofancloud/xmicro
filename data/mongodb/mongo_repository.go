@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Hosts          string `json:"hosts"`
+	Addrs          string `json:"addrs"`
 	Username       string `json:"username"`
 	Password       string `json:"password"`
 	Database       string `json:"database"`

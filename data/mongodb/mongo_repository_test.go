@@ -49,7 +49,7 @@ func NewUserRepository(dataSource *DataSource) *UserRepository {
 
 func TestMongoRepository(t *testing.T) {
 	config := &Config{
-		Hosts:          "localhost:27017",
+		Addrs:          "localhost:27017",
 		Username:       "admin",
 		Password:       "admin",
 		Database:       "admin",
