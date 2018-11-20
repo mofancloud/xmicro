@@ -24,7 +24,7 @@ type MongoRepository interface {
 	UpdateSelective(m Model, updateData map[string]interface{}) error
 	Insert(m Model) error
 	Upsert(m Model) (upserted int, err error)
-	FindOne(in Model, out Model) error
+	FindOne(query Model, result Model) error
 	Delete(m Model) error
 	Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error)
 	Execute(m Model, fn DBFunc) error
@@ -109,9 +109,9 @@ func (self *mongoRepositoryImpl) Upsert(m Model) (upserted int, err error) {
 	return
 }
 
-func (self *mongoRepositoryImpl) FindOne(in Model, out Model) error {
-	return self.Execute(in, func(c *mgo.Collection) error {
-		err := c.Find(in.Unique()).One(out)
+func (self *mongoRepositoryImpl) FindOne(query Model, result Model) error {
+	return self.Execute(query, func(c *mgo.Collection) error {
+		err := c.Find(query.Unique()).One(result)
 		return err
 	})
 }
