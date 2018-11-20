@@ -1,21 +1,20 @@
 package mongodb
 
 import (
+	"github.com/mofancloud/xmicro/data"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-
-	base_model "base/model"
 )
 
 type Config struct {
 	Hosts          string `json:"hosts"`
-	Username       string `json:"user"`
+	Username       string `json:"username"`
 	Password       string `json:"password"`
 	Database       string `json:"database"`
-	ReplicaSetName string `json:"replicaSet"`
+	ReplicaSetName string `json:"replicaSetName"`
 	Poolsize       int    `json:"poolsize"`
 	Source         string `json:"source"`
-	Mode           int32  `json:"mode"`
+	Mode           int    `json:"mode"`
 }
 
 type MongoRepository struct {
@@ -31,105 +30,97 @@ func NewRepository(dataSource *DataSource) *MongoRepository {
 }
 
 func (self *MongoRepository) GetDataSource() *DataSource {
-	return self.DataSource
+	return self.dataSource
 }
 
 func (self *MongoRepository) All(m Model, result interface{}) error {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-	return Where(db, m, nil).All(result)
+	err := Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		return Where(c, nil).All(result)
+	})
+	return err
 }
 
-func (self *MongoRepository) Count(m Model) (int64, error) {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-	r, err := Where(db, m, nil).Count()
-	return int64(r), err
+func (self *MongoRepository) Count(m Model) (count int64, err error) {
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		c1, err := Where(c, nil).Count()
+		count = int64(c1)
+		return err
+	})
+	return
 }
 
-func (self *MongoRepository) Find(m Model) *mgo.Query {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
+func (self *MongoRepository) Update(m Model) (info *mgo.ChangeInfo, err error) {
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		info, err = c.Find(m.Unique()).Apply(mgo.Change{
+			ReturnNew: true,
+			Update: bson.M{
+				"$set": m,
+			},
+		}, m)
+		return err
+	})
 
-	return Where(db, m, m.Unique()).Limit(1)
-}
-
-func (self *MongoRepository) Where(db *mgo.Database, m Model, q interface{}) *mgo.Query {
-	return db.C(m.Collection()).Find(q)
-}
-
-func (self *MongoRepository) Update(m Model) (*mgo.ChangeInfo, error) {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-
-	return Find(db, m).Apply(mgo.Change{
-		ReturnNew: true,
-		Update: bson.M{
-			"$set": m,
-		},
-	}, m)
+	return
 }
 
 func (self *MongoRepository) UpdateSelective(m Model, updateData bson.M) error {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-
-	return db.C(m.Collection()).Update(m.Unique(), bson.M{"$set": updateData})
+	err := Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		return c.Update(m.Unique(), bson.M{"$set": updateData})
+	})
+	return err
 }
 
 func (self *MongoRepository) Insert(m Model) error {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-
-	return db.C(m.Collection()).Insert(m)
+	err := Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		return c.Insert(m)
+	})
+	return err
 }
 
-func (self *MongoRepository) Upsert(m Model) (*mgo.ChangeInfo, error) {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-	changeInfo, err := db.C(m.Collection()).Upsert(m.Unique(), bson.M{"$set": m})
-	return changeInfo, err
+func (self *MongoRepository) Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error) {
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		changeInfo, err = c.Upsert(m.Unique(), bson.M{"$set": m})
+		return err
+	})
+
+	return
+}
+
+func (self *MongoRepository) FindOne(m Model) error {
+	return Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		err := c.Find(m.Unique()).One(m)
+		return err
+	})
 }
 
 func (self *MongoRepository) Delete(m Model) error {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
-
-	return db.C(m.Collection()).Remove(m.Unique())
+	return Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		return c.Remove(m.Unique())
+	})
 }
 
-func (self *MongoRepository) Page(pageQuery *base_model.PageQuery, m Model, list interface{}) (int64, int64, int32, error) {
-	session := self.DataSource.GetSession()
-	defer session.Close()
+func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error) {
+	filters, pageNo, pageSize, _ := ParsePageQuery(m, pageQuery)
 
-	filters, pageNo, pageSize, sorts := ParsePageQuery(m, pageQuery)
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		t, err := c.Find(filters).Count()
+		total = int64(t)
+		if err != nil {
+			return err
+		}
 
-	c := session.DB(self.DataSource.Database).C(m.Collection())
-	ms := bson.M(filters)
-	total, _ := c.Find(ms).Count()
+		return Page(c, pageQuery, m, list)
+	})
 
-	offset := int((int32(pageNo) - 1) * pageSize)
-	limit := int(pageSize)
-
-	err := c.Find(ms).Skip(offset).Limit(limit).Sort(sorts...).All(list)
-
-	return int64(total), pageNo, pageSize, err
+	return
 }
 
-func (self *MongoRepository) ensureIndexes(m Indexed) {
-	session := self.DataSource.GetSession()
-	db := session.DB(self.DataSource.Database)
-	defer session.Close()
+func (self *MongoRepository) EnsureIndexes(m Indexed) {
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		for _, i := range m.Indexes() {
+			c.EnsureIndex(i)
+		}
 
-	coll := db.C(m.Collection())
-	for _, i := range m.Indexes() {
-		coll.EnsureIndex(i)
-	}
+		return nil
+	})
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type DataSource struct {
-	config  Config
+	config  *Config
 	session *mgo.Session
 }
 
@@ -31,29 +31,29 @@ func (self *DataSource) Connect() error {
 		Source:    self.config.Source,
 		Timeout:   time.Second * 5,
 	}
-	if len(config.ReplicaSetName) > 0 {
+	if len(self.config.ReplicaSetName) > 0 {
 		info.ReplicaSetName = self.config.ReplicaSetName
 	}
 	var GlobalMgoSession, err = mgo.DialWithInfo(info)
 	if err != nil {
 		log.Fatal(err)
-		return nil, err
+		return err
 	}
 	GlobalMgoSession.SetSocketTimeout(time.Second * 10)
 	GlobalMgoSession.SetSyncTimeout(time.Second * 10)
 
-	mode := config.Mode
+	mode := self.config.Mode
 	// 没有配置就取primary
 	if mode <= 0 {
-		mode = int32(mgo.Primary)
+		mode = int(mgo.Primary)
 	}
 	GlobalMgoSession.SetMode(mgo.Mode(mode), true)
 
-	self.Session = GlobalMgoSession
+	self.session = GlobalMgoSession
 
 	return nil
 }
 
 func (s *DataSource) GetSession() *mgo.Session {
-	return s.session.Clone()
+	return s.session
 }
