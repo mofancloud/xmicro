@@ -115,6 +115,10 @@ func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list inter
 	return
 }
 
+func (self *MongoRepository) Execute(m Model, fn DBFunc) error {
+	return Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), fn)
+}
+
 func (self *MongoRepository) EnsureIndexes(m Indexed) {
 	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
 		for _, i := range m.Indexes() {
