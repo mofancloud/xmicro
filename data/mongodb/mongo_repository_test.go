@@ -43,7 +43,7 @@ type UserRepository struct {
 
 func NewUserRepository(dataSource *DataSource) *UserRepository {
 	return &UserRepository{
-		*NewMongoRepository(dataSource, &User{}),
+		*NewMongoRepository(dataSource),
 	}
 }
 

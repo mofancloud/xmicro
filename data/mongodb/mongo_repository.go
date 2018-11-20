@@ -19,14 +19,12 @@ type Config struct {
 
 type MongoRepository struct {
 	dataSource *DataSource
-	model      Model
 }
 
 // Constructor
-func NewMongoRepository(dataSource *DataSource, model Model) *MongoRepository {
+func NewMongoRepository(dataSource *DataSource) *MongoRepository {
 	self := &MongoRepository{
 		dataSource: dataSource,
-		model:      model,
 	}
 	return self
 }
@@ -108,7 +106,7 @@ func (self *MongoRepository) Delete(m Model) error {
 }
 
 func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error) {
-	filters, pageNo, pageSize, _ := ParsePageQuery(self.model, pageQuery)
+	filters, pageNo, pageSize, _ := ParsePageQuery(m, pageQuery)
 
 	self.Execute(m, func(c *mgo.Collection) error {
 		t, err := c.Find(filters).Count()
@@ -117,7 +115,7 @@ func (self *MongoRepository) Page(pageQuery *data.PageQuery, m Model, list inter
 			return err
 		}
 
-		return Page(c, pageQuery, self.model, list)
+		return Page(c, pageQuery, m, list)
 	})
 
 	return
@@ -128,16 +126,11 @@ func (self *MongoRepository) Execute(m Model, fn DBFunc) error {
 }
 
 func (self *MongoRepository) EnsureIndexes(m Indexed) {
-	switch self.model.(type) {
-	case Indexed:
-		{
-			Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
-				for _, i := range m.Indexes() {
-					c.EnsureIndex(i)
-				}
-
-				return nil
-			})
+	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+		for _, i := range m.Indexes() {
+			c.EnsureIndex(i)
 		}
-	}
+
+		return nil
+	})
 }
