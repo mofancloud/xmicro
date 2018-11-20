@@ -26,7 +26,7 @@ func TestMongoRepository(t *testing.T) {
 		Hosts: "localhost:27017"
 		Username: "",
 		Password: "",
-		Database: "",
+		Database: "admin",
 	}
 
 	userRepository := NewMongoRepository(Config)
