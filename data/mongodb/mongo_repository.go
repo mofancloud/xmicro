@@ -23,8 +23,8 @@ type MongoRepository interface {
 	Update(m Model) (updated int, err error)
 	UpdateSelective(m Model, updateData map[string]interface{}) error
 	Insert(m Model) error
-	Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error)
-	FindOne(m Model) error
+	Upsert(m Model) (upserted int, err error)
+	FindOne(in Model, out Model) error
 	Delete(m Model) error
 	Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error)
 	Execute(m Model, fn DBFunc) error
@@ -96,18 +96,22 @@ func (self *mongoRepositoryImpl) Insert(m Model) error {
 	return err
 }
 
-func (self *mongoRepositoryImpl) Upsert(m Model) (changeInfo *mgo.ChangeInfo, err error) {
+func (self *mongoRepositoryImpl) Upsert(m Model) (upserted int, err error) {
 	self.Execute(m, func(c *mgo.Collection) error {
-		changeInfo, err = c.Upsert(m.Unique(), bson.M{"$set": m})
-		return err
+		changeInfo, err := c.Upsert(m.Unique(), bson.M{"$set": m})
+		if err != nil {
+			return err
+		}
+		upserted = changeInfo.Updated
+		return nil
 	})
 
 	return
 }
 
-func (self *mongoRepositoryImpl) FindOne(m Model) error {
-	return self.Execute(m, func(c *mgo.Collection) error {
-		err := c.Find(m.Unique()).One(m)
+func (self *mongoRepositoryImpl) FindOne(in Model, out Model) error {
+	return self.Execute(in, func(c *mgo.Collection) error {
+		err := c.Find(in.Unique()).One(out)
 		return err
 	})
 }
