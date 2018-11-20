@@ -52,8 +52,8 @@ func NewUserRepository(dataSource *DataSource) *UserRepository {
 func TestMongoRepository(t *testing.T) {
 	config := &Config{
 		Hosts:          "localhost:27017",
-		Username:       "hunxiao2yonghuming",
-		Password:       "8nhsNRJjkVL4dYN2",
+		Username:       "root",
+		Password:       "root",
 		Database:       "admin",
 		ReplicaSetName: "",
 		Poolsize:       200,
