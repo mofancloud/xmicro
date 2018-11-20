@@ -49,15 +49,21 @@ func (self *MongoRepository) Count(m Model) (count int64, err error) {
 	return
 }
 
-func (self *MongoRepository) Update(m Model) (info *mgo.ChangeInfo, err error) {
+func (self *MongoRepository) Update(m Model) (updated int, err error) {
 	self.Execute(m, func(c *mgo.Collection) error {
-		info, err = c.Find(m.Unique()).Apply(mgo.Change{
+		info, err := c.Find(m.Unique()).Apply(mgo.Change{
 			ReturnNew: true,
 			Update: bson.M{
 				"$set": m,
 			},
 		}, m)
-		return err
+
+		if err != nil {
+			return err
+		}
+
+		updated = info.Updated
+		return nil
 	})
 
 	return

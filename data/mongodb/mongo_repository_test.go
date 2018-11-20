@@ -50,8 +50,8 @@ func NewUserRepository(dataSource *DataSource) *UserRepository {
 func TestMongoRepository(t *testing.T) {
 	config := &Config{
 		Hosts:          "localhost:27017",
-		Username:       "root",
-		Password:       "root",
+		Username:       "admin",
+		Password:       "admin",
 		Database:       "admin",
 		ReplicaSetName: "",
 		Poolsize:       200,
@@ -84,11 +84,11 @@ func TestMongoRepository(t *testing.T) {
 	}
 
 	user.Nick = "哈哈"
-	change, err := userRepository.Update(&user)
+	updated, err := userRepository.Update(&user)
 	if err != nil {
 		t.Errorf("update err: %v", err)
 	}
-	t.Logf("updated: %v, user: %v\n", change, user)
+	t.Logf("updated: %d, user: %v\n", updated, user)
 
 	m := &User{Id: user.Id, TenantId: "t1"}
 	err = userRepository.FindOne(m)
