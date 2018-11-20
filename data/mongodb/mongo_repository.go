@@ -11,7 +11,7 @@ type Config struct {
 	Hosts          string `json:"hosts"`
 	Username       string `json:"user"`
 	Password       string `json:"password"`
-	Dbname         string `json:"dbname"`
+	Database       string `json:"database"`
 	ReplicaSetName string `json:"replicaSet"`
 	Poolsize       int    `json:"poolsize"`
 	Source         string `json:"source"`

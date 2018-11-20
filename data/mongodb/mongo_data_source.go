@@ -9,14 +9,14 @@ import (
 )
 
 type DataSource struct {
-	Config  Config
-	Session *mgo.Session
+	config  Config
+	session *mgo.Session
 }
 
 // Constructor
 func NewDataSource(config *Config) *DataSource {
 	self := &DataSource{
-		Config: config,
+		config: config,
 	}
 	return self
 }
