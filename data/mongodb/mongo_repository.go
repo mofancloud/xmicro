@@ -28,22 +28,24 @@ type MongoRepository interface {
 	Delete(m Model) error
 	Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error)
 	Execute(m Model, fn DBFunc) error
-	EnsureIndexes(m Indexed)
+	EnsureIndexes(m Indexed) error
 }
 
 type mongoRepositoryImpl struct {
-	dataSource *DataSource
+	dsAliasName string
 }
 
 // Constructor
-func NewMongoRepository(dataSource *DataSource) MongoRepository {
-	return &mongoRepositoryImpl{
-		dataSource: dataSource,
-	}
+func NewMongoRepository() MongoRepository {
+	return &mongoRepositoryImpl{dsAliasName: "default"}
 }
 
-func (self *mongoRepositoryImpl) GetDataSource() *DataSource {
-	return self.dataSource
+func (self *mongoRepositoryImpl) dataSource(dsAliasName string) {
+	self.dsAliasName = dsAliasName
+}
+
+func (self *mongoRepositoryImpl) GetDataSource() (DataSource, error) {
+	return GetDataSource(self.dsAliasName)
 }
 
 func (self *mongoRepositoryImpl) All(m Model, result interface{}) error {
@@ -139,13 +141,26 @@ func (self *mongoRepositoryImpl) Page(pageQuery *data.PageQuery, m Model, list i
 }
 
 func (self *mongoRepositoryImpl) Execute(m Model, fn DBFunc) error {
-	return Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), fn)
+	ds, err := self.GetDataSource()
+	if err != nil {
+		return err
+	}
+
+	return Execute(ds.GetSession(), m.Database(), m.Collection(), fn)
 }
 
-func (self *mongoRepositoryImpl) EnsureIndexes(m Indexed) {
-	Execute(self.dataSource.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
+func (self *mongoRepositoryImpl) EnsureIndexes(m Indexed) error {
+	ds, err := self.GetDataSource()
+	if err != nil {
+		return err
+	}
+
+	return Execute(ds.GetSession(), m.Database(), m.Collection(), func(c *mgo.Collection) error {
 		for _, i := range m.Indexes() {
-			c.EnsureIndex(i)
+			err = c.EnsureIndex(i)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil

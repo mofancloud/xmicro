@@ -8,20 +8,23 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type DataSource struct {
+type DataSource interface {
+	GetSession() *mgo.Session
+}
+
+type dataSourceImpl struct {
 	config  *Config
 	session *mgo.Session
 }
 
 // Constructor
-func NewDataSource(config *Config) *DataSource {
-	self := &DataSource{
+func NewDataSource(config *Config) *dataSourceImpl {
+	return &dataSourceImpl{
 		config: config,
 	}
-	return self
 }
 
-func (self *DataSource) Connect() error {
+func (self *dataSourceImpl) Connect() error {
 	var info = &mgo.DialInfo{
 		Addrs:     strings.Split(self.config.Addrs, ";"),
 		Username:  self.config.Username,
@@ -54,6 +57,6 @@ func (self *DataSource) Connect() error {
 	return nil
 }
 
-func (s *DataSource) GetSession() *mgo.Session {
+func (s *dataSourceImpl) GetSession() *mgo.Session {
 	return s.session
 }

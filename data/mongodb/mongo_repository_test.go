@@ -41,17 +41,17 @@ type UserRepository struct {
 	MongoRepository
 }
 
-func NewUserRepository(dataSource *DataSource) *UserRepository {
+func NewUserRepository() *UserRepository {
 	return &UserRepository{
-		NewMongoRepository(dataSource),
+		NewMongoRepository(),
 	}
 }
 
 func TestMongoRepository(t *testing.T) {
 	config := &Config{
 		Addrs:          "localhost:27017",
-		Username:       "admin",
-		Password:       "admin",
+		Username:       "hunxiao2yonghuming",
+		Password:       "8nhsNRJjkVL4dYN2",
 		Database:       "admin",
 		ReplicaSetName: "",
 		Poolsize:       200,
@@ -59,14 +59,13 @@ func TestMongoRepository(t *testing.T) {
 		Mode:           2,
 	}
 
-	dataSource := NewDataSource(config)
-	err := dataSource.Connect()
+	err := RegisterDataSource("default", config)
 	if err != nil {
-		t.Errorf("open dataSource err: %v", err)
+		t.Errorf("register dataSource err: %v\n", err)
 		return
 	}
 
-	userRepository := NewUserRepository(dataSource)
+	userRepository := NewUserRepository()
 
 	user := User{
 		Id:       bson.NewObjectId(),
@@ -90,14 +89,15 @@ func TestMongoRepository(t *testing.T) {
 	}
 	t.Logf("updated: %d, user: %v\n", updated, user)
 
-	m := &User{Id: user.Id, TenantId: "t1"}
-	err = userRepository.FindOne(m)
+	q := &User{Id: user.Id, TenantId: "t1"}
+	var m User
+	err = userRepository.FindOne(q, &m)
 	if err != nil {
 		t.Errorf("find err: %v", err)
 	}
 	t.Logf("find: %v\n", m)
 
-	err = userRepository.Delete(m)
+	err = userRepository.Delete(&m)
 	if err != nil {
 		t.Errorf("delete err: %v", err)
 	}
