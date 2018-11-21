@@ -216,9 +216,8 @@ func (rc *Cache) SINTER(key ...interface{}) (reply interface{}, err error) {
 	return
 }
 
-func (rc *Cache) HGET(key string, filed string) (reply interface{}, err error) {
-	reply, err = rc.do("HGET", key, filed)
-	return
+func (rc *Cache) HGET(key string, field string) (interface{}, error) {
+	return rc.do("HGET", key, field)
 }
 
 func (rc *Cache) HMSET(value []interface{}) (reply interface{}, err error) {
@@ -241,9 +240,8 @@ func (rc *Cache) HDEL(key string, fields []string) (reply interface{}, err error
 	return
 }
 
-func (rc *Cache) HINCRBY(key string, filed string, increment int64) (reply interface{}, err error) {
-	reply, err = rc.do("HINCRBY", key, filed, increment)
-	return
+func (rc *Cache) HINCRBY(key string, filed string, increment int64) (interface{}, error) {
+	return rc.do("HINCRBY", key, filed, increment)
 }
 
 func (rc *Cache) EXPIRE(key string, seconds int32) (reply interface{}, err error) {
