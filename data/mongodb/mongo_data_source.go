@@ -23,7 +23,7 @@ func NewDataSource(config *Config) *DataSource {
 
 func (self *DataSource) Connect() error {
 	var info = &mgo.DialInfo{
-		Addrs:     strings.Split(self.config.Hosts, ";"),
+		Addrs:     strings.Split(self.config.Addrs, ";"),
 		Username:  self.config.Username,
 		Password:  self.config.Password,
 		Database:  self.config.Database,
