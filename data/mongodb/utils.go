@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"base/utils"
 	"errors"
 	"fmt"
 	"reflect"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/mofancloud/xmicro/data"
 	xreflect "github.com/mofancloud/xmicro/reflect"
+	"github.com/mofancloud/xmicro/utils"
 )
 
 func All(c *mgo.Collection, m Model) *mgo.Query {
@@ -178,12 +178,11 @@ func BuildCriteria(m Model, filters map[string]interface{}) bson.M {
 						fieldInfo, ok := mStruct.FieldsMap[k]
 						if ok {
 							// 如果字段是时间类型
-							if fieldInfo.FieldType == utils.TimeType {
+							if fieldInfo.FieldType == xreflect.TimeType {
 								// 并且传入的值是int64, 则把int64转成 time格式先
 								fieldType := fieldInfo.FieldType
 
-								if fieldType == utils.TimeType {
-
+								if fieldType == xreflect.TimeType {
 									// 并且传入的值是int64, 则把int64转成 time格式先
 									if v, ok := vValue.(int64); ok {
 										vValue = utils.Unix(v, 0)
