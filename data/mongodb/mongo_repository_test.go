@@ -50,8 +50,8 @@ func NewUserRepository() *UserRepository {
 func TestMongoRepository(t *testing.T) {
 	config := &Config{
 		Addrs:          "localhost:27017",
-		Username:       "hunxiao2yonghuming",
-		Password:       "8nhsNRJjkVL4dYN2",
+		Username:       "admin",
+		Password:       "admin",
 		Database:       "admin",
 		ReplicaSetName: "",
 		Poolsize:       200,
