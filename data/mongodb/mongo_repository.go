@@ -130,6 +130,7 @@ func (self *mongoRepositoryImpl) Page(pageQuery *data.PageQuery, m Model, list i
 	self.Execute(m, func(c *mgo.Collection) error {
 		t, err := c.Find(filters).Count()
 		total = int64(t)
+
 		if err != nil {
 			return err
 		}

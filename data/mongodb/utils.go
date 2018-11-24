@@ -48,7 +48,7 @@ func Page(c *mgo.Collection, pageQuery *data.PageQuery, m Model, list interface{
 	offset := int((int32(pageNo) - 1) * pageSize)
 	limit := int(pageSize)
 
-	err := c.Find(bson.M(filters)).Skip(offset).Limit(limit).Sort(sorts...).All(&list)
+	err := c.Find(bson.M(filters)).Skip(offset).Limit(limit).Sort(sorts...).All(list)
 	return err
 }
 
