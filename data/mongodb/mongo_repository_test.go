@@ -89,9 +89,8 @@ func TestMongoRepository(t *testing.T) {
 	}
 	t.Logf("updated: %d, user: %v\n", updated, user)
 
-	q := &User{Id: user.Id, TenantId: "t1"}
-	var m User
-	err = userRepository.FindOne(q, &m)
+	m := User{Id: user.Id, TenantId: "t1"}
+	err = userRepository.FindOne(&m)
 	if err != nil {
 		t.Errorf("find err: %v", err)
 	}

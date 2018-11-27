@@ -24,7 +24,7 @@ type MongoRepository interface {
 	UpdateSelective(m Model, updateData map[string]interface{}) error
 	Insert(m Model) error
 	Upsert(m Model) (upserted int, err error)
-	FindOne(query Model, result Model) error
+	FindOne(m Model) error
 	Delete(m Model) error
 	Page(pageQuery *data.PageQuery, m Model, list interface{}) (total int64, pageNo int64, pageSize int32, err error)
 	Execute(m Model, fn DBFunc) error
@@ -40,7 +40,7 @@ func NewMongoRepository() MongoRepository {
 	return &mongoRepositoryImpl{dsAliasName: "default"}
 }
 
-func (self *mongoRepositoryImpl) dataSource(dsAliasName string) {
+func (self *mongoRepositoryImpl) DataSource(dsAliasName string) {
 	self.dsAliasName = dsAliasName
 }
 
@@ -111,9 +111,9 @@ func (self *mongoRepositoryImpl) Upsert(m Model) (upserted int, err error) {
 	return
 }
 
-func (self *mongoRepositoryImpl) FindOne(query Model, result Model) error {
-	return self.Execute(query, func(c *mgo.Collection) error {
-		err := c.Find(query.Unique()).One(result)
+func (self *mongoRepositoryImpl) FindOne(m Model) error {
+	return self.Execute(m, func(c *mgo.Collection) error {
+		err := c.Find(m.Unique()).One(m)
 		return err
 	})
 }
